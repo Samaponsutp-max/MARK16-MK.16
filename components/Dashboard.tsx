@@ -305,22 +305,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ votes, villages, statuses,
             {paginatedVillages.map((v) => (
                 <div key={v.id} className={`bg-white rounded-3xl border transition-all duration-300 flex flex-col overflow-hidden group hover:shadow-xl hover:-translate-y-1 ${v.isCloseRace ? 'border-amber-400 ring-4 ring-amber-50' : 'border-slate-200'}`}>
                     {/* Card Header */}
-                    <div className="p-5 border-b border-slate-100 flex items-start justify-between bg-slate-50/50">
-                        <div className="flex gap-4">
-                            <div className="w-12 h-12 bg-[#1e293b] text-white rounded-xl flex items-center justify-center font-black text-xl shadow-lg shrink-0">
+                    <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                        <div className="flex items-center gap-6 w-full">
+                            <div className="w-32 h-32 bg-[#1e293b] text-white rounded-3xl flex items-center justify-center font-black text-8xl shadow-2xl shrink-0 border-4 border-white ring-4 ring-slate-100/50">
                                 {v.moo}
                             </div>
-                            <div>
-                                <h4 className="font-black text-slate-900 text-lg leading-tight">{v.name}</h4>
-                                <div className="flex items-center gap-2 mt-1">
-                                    <span className="text-[10px] font-black uppercase tracking-wider bg-white border border-slate-200 px-2 py-0.5 rounded text-slate-500">Zone {v.zone}</span>
+                            <div className="flex-1 min-w-0">
+                                <h4 className="font-black text-slate-900 text-3xl leading-tight mb-2">{v.name}</h4>
+                                <div className="flex flex-wrap gap-2">
+                                    <span className="text-xs font-black uppercase tracking-wider bg-white border border-slate-200 px-2 py-1 rounded-lg text-slate-500 shadow-sm">Zone {v.zone}</span>
                                     {v.status?.isReported ? (
-                                        <span className="flex items-center gap-1 text-[10px] font-black text-emerald-600 uppercase tracking-wider">
-                                            <CheckCircle2 size={10} /> Reported
+                                        <span className="flex items-center gap-1 text-xs font-black text-emerald-600 uppercase tracking-wider bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-100">
+                                            <CheckCircle2 size={12} /> Reported
                                         </span>
                                     ) : (
-                                        <span className="flex items-center gap-1 text-[10px] font-black text-slate-400 uppercase tracking-wider">
-                                            <Clock size={10} /> Pending
+                                        <span className="flex items-center gap-1 text-xs font-black text-slate-400 uppercase tracking-wider bg-slate-100 px-2 py-1 rounded-lg border border-slate-200">
+                                            <Clock size={12} /> Pending
                                         </span>
                                     )}
                                 </div>
@@ -329,22 +329,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ votes, villages, statuses,
                     </div>
 
                     {/* Card Body: Candidates */}
-                    <div className="p-5 flex-1 space-y-4">
+                    <div className="p-5 flex-1 space-y-6">
                         {v.candidatesSorted.length > 0 ? (
-                            v.candidatesSorted.slice(0, 3).map((c, i) => {
+                            v.candidatesSorted.map((c, i) => {
                                 const pct = v.goodVotes > 0 ? (c.count / v.goodVotes * 100) : 0;
                                 return (
-                                    <div key={c.id} className="space-y-1.5">
-                                        <div className="flex justify-between items-end text-sm">
-                                            <div className="flex items-center gap-2">
-                                                <span className={`w-5 h-5 rounded-md flex items-center justify-center text-xs font-bold ${i === 0 ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-500'}`}>{c.number}</span>
-                                                <span className={`font-bold truncate max-w-[140px] ${i === 0 ? 'text-slate-900' : 'text-slate-500'}`}>{c.name}</span>
+                                    <div key={c.id} className="space-y-2">
+                                        <div className="flex justify-between items-center gap-3">
+                                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                                                <span className={`w-8 h-8 rounded-lg flex items-center justify-center text-lg font-black shrink-0 ${i === 0 ? 'bg-slate-800 text-white shadow-md' : 'bg-slate-100 text-slate-500'}`}>{c.number}</span>
+                                                <span className={`font-black text-xl truncate ${i === 0 ? 'text-slate-900' : 'text-slate-500'}`}>{c.name}</span>
                                             </div>
-                                            <div className="font-numeric font-black text-slate-700">
-                                                {c.count.toLocaleString()} <span className="text-xs text-slate-400 font-normal">({pct.toFixed(0)}%)</span>
+                                            <div className="font-numeric font-black text-slate-700 text-xl shrink-0">
+                                                {c.count.toLocaleString()} <span className="text-sm text-slate-400 font-bold opacity-60">({pct.toFixed(0)}%)</span>
                                             </div>
                                         </div>
-                                        <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                        <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
                                             <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: c.color }}></div>
                                         </div>
                                     </div>
