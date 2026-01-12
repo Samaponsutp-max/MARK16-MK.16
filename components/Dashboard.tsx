@@ -2,7 +2,7 @@
 import React, { useMemo, useState } from 'react';
 import { VoteRecord, Village, VillageStatus } from '../types';
 import { CANDIDATES, MEMBER_CANDIDATES } from '../constants';
-import { Search, ChevronLeft, ChevronRight, Trophy, Users, FileBarChart, Activity, CheckCircle2, Clock, AlertCircle, Scale, X, Info, Medal, RefreshCw, Layers, CalendarDays, LayoutGrid, MapPin, BarChart3, PieChart } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, Trophy, Users, FileBarChart, Activity, CheckCircle2, Clock, AlertCircle, Scale, X, Info, Medal, RefreshCw, Layers, CalendarDays, LayoutGrid, MapPin, BarChart3, PieChart, Share2, Check } from 'lucide-react';
 
 interface DashboardProps {
   votes: VoteRecord[];
@@ -20,6 +20,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ votes, villages, statuses,
   const [candidateFilterText, setCandidateFilterText] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
+  const [copiedVillageId, setCopiedVillageId] = useState<number | null>(null);
 
   const electionDateDisplay = "11 มกราคม 2569";
 
@@ -64,6 +66,54 @@ export const Dashboard: React.FC<DashboardProps> = ({ votes, villages, statuses,
   }, [villages, relevantVotes, statuses]);
 
   const progress = Math.min(100, globalStats.totalUnits > 0 ? Math.round((globalStats.reportedUnits / globalStats.totalUnits) * 100) : 0);
+
+  const handleShare = async () => {
+    const shareData = {
+        title: 'ผลการเลือกตั้ง อบต.เหนือเมือง',
+        text: `ติดตามผลคะแนนเลือกตั้ง อบต.เหนือเมือง แบบเรียลไทม์ (ความคืบหน้า ${progress}%)`,
+        url: window.location.href
+    };
+
+    if (navigator.share) {
+        try {
+            await navigator.share(shareData);
+        } catch (err) {
+            console.log('Error sharing', err);
+        }
+    } else {
+        try {
+            await navigator.clipboard.writeText(window.location.href);
+            setIsCopied(true);
+            setTimeout(() => setIsCopied(false), 2000);
+        } catch (err) {
+            console.error('Failed to copy', err);
+        }
+    }
+  };
+
+  const handleShareVillage = async (v: any) => {
+    const shareData = {
+        title: `ผลเลือกตั้ง หมู่ที่ ${v.moo} ${v.name}`,
+        text: `รายงานผลคะแนนเลือกตั้ง อบต.เหนือเมือง หมู่ที่ ${v.moo} ${v.name} (ผู้มาใช้สิทธิ ${v.turnoutPercent.toFixed(1)}%)`,
+        url: window.location.href
+    };
+
+    if (navigator.share) {
+        try {
+            await navigator.share(shareData);
+        } catch (err) {
+            console.log('Error sharing', err);
+        }
+    } else {
+        try {
+            await navigator.clipboard.writeText(`${shareData.text}\n${shareData.url}`);
+            setCopiedVillageId(v.id);
+            setTimeout(() => setCopiedVillageId(null), 2000);
+        } catch (err) {
+            console.error('Failed to copy', err);
+        }
+    }
+  };
 
   const candidateResults = useMemo(() => {
     const list = viewMode === 'MAYOR' ? CANDIDATES : Object.values(MEMBER_CANDIDATES).flat();
@@ -152,6 +202,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ votes, villages, statuses,
 
             <div className="flex items-center gap-3">
                  <button 
+                  onClick={handleShare}
+                  className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 text-slate-600 rounded-2xl hover:border-indigo-500 hover:text-indigo-600 transition-all font-bold shadow-sm"
+                 >
+                   {isCopied ? <Check size={20} className="text-emerald-500" /> : <Share2 size={20} />}
+                   <span>{isCopied ? 'คัดลอกแล้ว' : 'แชร์ผล'}</span>
+                 </button>
+
+                 <button 
                   onClick={handleRefreshClick}
                   className={`flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 text-slate-600 rounded-2xl hover:border-blue-500 hover:text-blue-600 transition-all font-bold shadow-sm ${isRefreshing ? 'opacity-70' : ''}`}
                 >
@@ -208,39 +266,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ votes, villages, statuses,
         </div>
       </div>
 
-      {/* 2. Global Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-         <StatsCard 
-            title="ผู้มาใช้สิทธิ (Turnout)" 
-            value={globalStats.turnout} 
-            total={globalStats.eligible} 
-            color="blue" 
-            icon={<Users size={24} />} 
-         />
-         <StatsCard 
-            title="บัตรดี (Valid)" 
-            value={globalStats.good} 
-            total={globalStats.turnout} 
-            color="emerald" 
-            icon={<CheckCircle2 size={24} />} 
-         />
-         <StatsCard 
-            title="บัตรเสีย (Invalid)" 
-            value={globalStats.invalid} 
-            total={globalStats.turnout} 
-            color="red" 
-            icon={<X size={24} />} 
-         />
-         <StatsCard 
-            title="ไม่ประสงค์ (No Vote)" 
-            value={globalStats.noVote} 
-            total={globalStats.turnout} 
-            color="slate" 
-            icon={<AlertCircle size={24} />} 
-         />
-      </div>
-
-      {/* 3. Candidate Leaderboard (Only for Mayor) */}
+      {/* 2. Candidate Leaderboard (Only for Mayor) */}
       {viewMode === 'MAYOR' && (
         <div className="space-y-6">
             <div className="flex items-center gap-3 px-2">
@@ -279,6 +305,38 @@ export const Dashboard: React.FC<DashboardProps> = ({ votes, villages, statuses,
         </div>
       )}
 
+      {/* 3. Global Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+         <StatsCard 
+            title="ผู้มาใช้สิทธิ (Turnout)" 
+            value={globalStats.turnout} 
+            total={globalStats.eligible} 
+            color="blue" 
+            icon={<Users size={24} />} 
+         />
+         <StatsCard 
+            title="บัตรดี (Valid)" 
+            value={globalStats.good} 
+            total={globalStats.turnout} 
+            color="emerald" 
+            icon={<CheckCircle2 size={24} />} 
+         />
+         <StatsCard 
+            title="บัตรเสีย (Invalid)" 
+            value={globalStats.invalid} 
+            total={globalStats.turnout} 
+            color="red" 
+            icon={<X size={24} />} 
+         />
+         <StatsCard 
+            title="ไม่ประสงค์ (No Vote)" 
+            value={globalStats.noVote} 
+            total={globalStats.turnout} 
+            color="slate" 
+            icon={<AlertCircle size={24} />} 
+         />
+      </div>
+
       {/* 4. Village Results Explorer (Modern Card Grid) */}
       <div className="space-y-6 pt-4">
          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
@@ -305,8 +363,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ votes, villages, statuses,
             {paginatedVillages.map((v) => (
                 <div key={v.id} className={`bg-white rounded-3xl border transition-all duration-300 flex flex-col overflow-hidden group hover:shadow-xl hover:-translate-y-1 ${v.isCloseRace ? 'border-amber-400 ring-4 ring-amber-50' : 'border-slate-200'}`}>
                     {/* Card Header */}
-                    <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                        <div className="flex items-center gap-6 w-full">
+                    <div className="p-5 border-b border-slate-100 bg-slate-50/50 relative">
+                        <button 
+                            onClick={() => handleShareVillage(v)}
+                            className="absolute top-4 right-4 p-2.5 rounded-xl bg-white text-slate-400 border border-slate-200 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition-all shadow-sm z-10"
+                        >
+                            {copiedVillageId === v.id ? <Check size={18} className="text-emerald-500" /> : <Share2 size={18} />}
+                        </button>
+                        <div className="flex items-center gap-6 w-full pr-12">
                             <div className="w-32 h-32 bg-[#1e293b] text-white rounded-3xl flex items-center justify-center font-black text-8xl shadow-2xl shrink-0 border-4 border-white ring-4 ring-slate-100/50">
                                 {v.moo}
                             </div>

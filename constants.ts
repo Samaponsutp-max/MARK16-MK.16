@@ -104,8 +104,9 @@ export const MEMBER_CANDIDATES: Record<number, Candidate[]> = {
     createMember(1802, 2, 'นายจงกล มีสวัสดิ์')
   ],
   19: [
-    createMember(1901, 1, 'นายสถาพร สระพรหม'),
-    createMember(1902, 2, 'นางยุวรินทร์ พรรษา')
+    createMember(1901, 1, 'นางพัชรพร พลูลาภ'),
+    createMember(1902, 2, 'นางณฤดี นนสุภาพ'),
+    createMember(1903, 3, 'นายวิรัช สาศิริ')
   ],
   20: [
     createMember(2001, 1, 'นายวิเชียร ไชยศิรินทร์'),
