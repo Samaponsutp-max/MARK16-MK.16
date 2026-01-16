@@ -114,15 +114,17 @@ export const VoteEntry: React.FC<VoteEntryProps> = ({ villages, statuses, onSubm
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-3">
-            <label className="text-base font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+            <label htmlFor="village-select" className="text-base font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
                 <div className="w-6 h-6 rounded bg-slate-200 flex items-center justify-center text-slate-500 text-xs font-black">01</div>
                 เลือกหน่วยเลือกตั้ง
             </label>
             <div className="relative">
                 <select 
+                  id="village-select"
                   className="w-full p-5 pl-5 pr-12 bg-slate-50 border-2 border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 focus:bg-white transition-all text-xl font-black text-slate-900 appearance-none cursor-pointer hover:border-slate-300 shadow-inner"
                   value={selectedVillageId}
                   onChange={(e) => setSelectedVillageId(parseInt(e.target.value))}
+                  aria-label="เลือกหมู่บ้านหรือหน่วยเลือกตั้ง"
                 >
                   {villages.map(v => (
                     <option key={v.id} value={v.id}>หมู่ที่ {v.moo} - {v.name}</option>
@@ -139,16 +141,22 @@ export const VoteEntry: React.FC<VoteEntryProps> = ({ villages, statuses, onSubm
                 <div className="w-6 h-6 rounded bg-slate-200 flex items-center justify-center text-slate-500 text-xs font-black">02</div>
                 ประเภทการเลือกตั้ง
             </label>
-            <div className="flex bg-slate-100 p-2 rounded-2xl border-2 border-slate-200 h-[76px] shadow-inner">
+            <div className="flex bg-slate-100 p-2 rounded-2xl border-2 border-slate-200 h-[76px] shadow-inner" role="radiogroup" aria-label="ประเภทการเลือกตั้ง">
               <button 
+                type="button"
                 onClick={() => setElectionType(ElectionType.MAYOR)}
                 className={`flex-1 text-lg font-black rounded-xl transition-all duration-300 ${electionType === ElectionType.MAYOR ? 'bg-white text-blue-900 shadow-md transform scale-100' : 'text-slate-400 hover:text-slate-600'}`}
+                aria-checked={electionType === ElectionType.MAYOR}
+                role="radio"
               >
                 นายก อบต.
               </button>
               <button 
+                type="button"
                 onClick={() => setElectionType(ElectionType.MEMBER)}
                 className={`flex-1 text-lg font-black rounded-xl transition-all duration-300 ${electionType === ElectionType.MEMBER ? 'bg-white text-blue-900 shadow-md transform scale-100' : 'text-slate-400 hover:text-slate-600'}`}
+                aria-checked={electionType === ElectionType.MEMBER}
+                role="radio"
               >
                 สมาชิก อบต.
               </button>
@@ -189,14 +197,18 @@ export const VoteEntry: React.FC<VoteEntryProps> = ({ villages, statuses, onSubm
                       {c.number}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-black text-slate-900 text-3xl leading-tight truncate">{c.name}</p>
+                      <label htmlFor={`candidate-input-${c.id}`} className="font-black text-slate-900 text-3xl leading-tight truncate block cursor-pointer">
+                        {c.name}
+                      </label>
                       <p className="text-sm text-slate-400 font-bold mt-1.5 uppercase tracking-widest bg-slate-100 inline-block px-3 py-1 rounded-full">{c.party}</p>
                     </div>
                     <div className="w-32 sm:w-44 shrink-0">
                       <input 
+                        id={`candidate-input-${c.id}`}
                         type="text" 
                         inputMode="numeric"
                         pattern="[0-9]*"
+                        aria-label={`คะแนนสำหรับหมายเลข ${c.number} ${c.name}`}
                         className="w-full text-right p-4 sm:p-6 bg-slate-50 border-2 border-slate-200 rounded-[20px] focus:border-blue-600 focus:ring-8 focus:ring-blue-100 font-numeric text-3xl sm:text-5xl font-black text-blue-900 transition-all placeholder:text-slate-200 shadow-inner outline-none"
                         placeholder="0"
                         value={voteInputs[c.id] || ''}
@@ -221,10 +233,14 @@ export const VoteEntry: React.FC<VoteEntryProps> = ({ villages, statuses, onSubm
                   
                   <div className="space-y-8">
                     <div className="space-y-3">
-                      <label className="text-sm font-black text-red-500 uppercase tracking-widest ml-1">จำนวนบัตรเสีย (Invalid)</label>
+                      <label htmlFor="invalid-votes-input" className="text-sm font-black text-red-500 uppercase tracking-widest ml-1 block cursor-pointer">
+                        จำนวนบัตรเสีย (Invalid)
+                      </label>
                       <input 
+                        id="invalid-votes-input"
                         type="text" 
                         inputMode="numeric"
+                        aria-label="จำนวนบัตรเสีย"
                         className="w-full text-right p-6 bg-white border-2 border-slate-200 rounded-[24px] focus:border-red-500 focus:ring-8 focus:ring-red-50 font-numeric text-4xl font-black text-red-600 placeholder:text-slate-100 shadow-sm outline-none"
                         placeholder="0"
                         value={invalidVoteStr}
@@ -232,10 +248,14 @@ export const VoteEntry: React.FC<VoteEntryProps> = ({ villages, statuses, onSubm
                       />
                     </div>
                     <div className="space-y-3">
-                      <label className="text-sm font-black text-slate-500 uppercase tracking-widest ml-1">ไม่ประสงค์ลงคะแนน (No Vote)</label>
+                      <label htmlFor="no-vote-input" className="text-sm font-black text-slate-500 uppercase tracking-widest ml-1 block cursor-pointer">
+                        ไม่ประสงค์ลงคะแนน (No Vote)
+                      </label>
                       <input 
+                        id="no-vote-input"
                         type="text" 
                         inputMode="numeric"
+                        aria-label="ไม่ประสงค์ลงคะแนน"
                         className="w-full text-right p-6 bg-white border-2 border-slate-200 rounded-[24px] focus:border-slate-500 focus:ring-8 focus:ring-slate-100 font-numeric text-4xl font-black text-slate-700 placeholder:text-slate-100 shadow-sm outline-none"
                         placeholder="0"
                         value={noVoteStr}
@@ -332,13 +352,13 @@ export const VoteEntry: React.FC<VoteEntryProps> = ({ villages, statuses, onSubm
       {/* Submit Confirmation Modal */}
       {showSubmitConfirm && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/80 backdrop-blur-xl p-4 animate-in fade-in duration-200">
-           <div className="bg-white rounded-[48px] p-10 max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden relative">
+           <div className="bg-white rounded-[48px] p-10 max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden relative" role="dialog" aria-modal="true" aria-labelledby="confirm-save-title">
               <div className="absolute top-0 inset-x-0 h-4 bg-blue-600"></div>
               <div className="flex flex-col items-center text-center">
                   <div className="w-24 h-24 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-8 ring-8 ring-blue-50/50">
                       <HelpCircle size={48} />
                   </div>
-                  <h3 className="text-3xl font-black text-slate-900 mb-2 uppercase tracking-tight">ยืนยันการบันทึก</h3>
+                  <h3 id="confirm-save-title" className="text-3xl font-black text-slate-900 mb-2 uppercase tracking-tight">ยืนยันการบันทึก</h3>
                   <p className="text-slate-500 font-bold mb-8">กรุณาตรวจสอบข้อมูลก่อนการส่งเข้าระบบ</p>
 
                   <div className="w-full space-y-4 mb-10">
@@ -384,14 +404,16 @@ export const VoteEntry: React.FC<VoteEntryProps> = ({ villages, statuses, onSubm
       {/* Remark Modal */}
       {showRemarkModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/80 backdrop-blur-xl p-4 animate-in fade-in duration-200">
-           <div className="bg-white rounded-[40px] p-10 max-w-lg w-full shadow-2xl border border-slate-100 relative">
+           <div className="bg-white rounded-[40px] p-10 max-w-lg w-full shadow-2xl border border-slate-100 relative" role="dialog" aria-modal="true" aria-labelledby="remark-modal-title">
               <div className="absolute top-0 inset-x-0 h-4 bg-slate-800"></div>
-              <h3 className="text-2xl font-black text-slate-900 mb-4 flex items-center gap-3">
+              <h3 id="remark-modal-title" className="text-2xl font-black text-slate-900 mb-4 flex items-center gap-3">
                  <ClipboardEdit className="text-blue-600" /> ระบุหมายเหตุ/เหตุผลการบันทึก
               </h3>
               <p className="text-slate-500 font-medium mb-6">ข้อความนี้จะถูกบันทึกลงใน Audit Log เพื่อความโปร่งใสและใช้ในการตรวจสอบภายหลัง</p>
               
               <textarea 
+                id="remark-textarea"
+                aria-label="ระบุหมายเหตุการบันทึกข้อมูล"
                 className="w-full p-6 bg-slate-50 border-2 border-slate-200 rounded-[24px] focus:border-blue-500 focus:bg-white outline-none transition-all font-bold text-slate-800 min-h-[160px] resize-none"
                 placeholder="ระบุเหตุผล เช่น: แก้ไขคะแนนผิดพลาดจากการอ่านบัตร, ข้อมูลเพิ่มเติมจากการตรวจสอบ..."
                 value={remarkInput}
@@ -420,7 +442,7 @@ export const VoteEntry: React.FC<VoteEntryProps> = ({ villages, statuses, onSubm
       {/* Success Modal */}
       {showSuccess && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/70 backdrop-blur-xl p-4 animate-in zoom-in duration-300">
-           <div className="bg-white rounded-[56px] p-14 flex flex-col items-center text-center shadow-2xl max-w-sm w-full border border-slate-100 relative overflow-hidden">
+           <div className="bg-white rounded-[56px] p-14 flex flex-col items-center text-center shadow-2xl max-w-sm w-full border border-slate-100 relative overflow-hidden" role="alert" aria-live="assertive">
               <div className="absolute top-0 inset-x-0 h-4 bg-emerald-500"></div>
               <div className="w-32 h-32 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mb-10 shadow-inner ring-12 ring-emerald-50/50">
                  <Check size={80} />
@@ -470,22 +492,23 @@ export const VoteEntry: React.FC<VoteEntryProps> = ({ villages, statuses, onSubm
       {/* Temporary Reset Modal */}
       {showResetConfirm && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/70 backdrop-blur-xl p-4 animate-in fade-in duration-200">
-           <div className="bg-white rounded-[48px] p-12 max-w-md w-full shadow-2xl border border-slate-100 text-center relative overflow-hidden">
+           <div className="bg-white rounded-[48px] p-12 max-w-md w-full shadow-2xl border border-slate-100 text-center relative overflow-hidden" role="dialog" aria-modal="true" aria-labelledby="reset-votes-title">
               <div className="absolute top-0 inset-x-0 h-4 bg-red-500"></div>
               <div className="w-28 h-28 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-8 ring-12 ring-red-50/50 shadow-inner">
                   <AlertTriangle size={56} />
               </div>
-              <h3 className="text-4xl font-black text-slate-900 mb-4 tracking-tight uppercase">ล้างผลคะแนน?</h3>
+              <h3 id="reset-votes-title" className="text-4xl font-black text-slate-900 mb-4 tracking-tight uppercase">ล้างผลคะแนน?</h3>
               <p className="text-slate-500 mb-10 font-bold text-xl leading-relaxed">
                   คุณกำลังจะลบข้อมูลคะแนนที่รายงานมาจาก <strong className="text-red-600">ทุกหน่วยเลือกตั้ง</strong> <br/>
                   <span className="text-red-500 font-black bg-red-50 px-3 py-1 rounded-lg mt-3 inline-block uppercase text-xs tracking-widest border border-red-100">Audit History will be created</span>
               </p>
 
               <div className="mb-10 bg-slate-50 p-8 rounded-[32px] border-2 border-slate-200 shadow-inner">
-                  <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-4">
+                  <label htmlFor="confirm-reset-input" className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-4">
                       พิมพ์คำว่า <span className="text-red-600 select-all font-mono">RESET</span> เพื่อยืนยัน
                   </label>
                   <input 
+                    id="confirm-reset-input"
                     type="text"
                     autoFocus
                     className="w-full p-5 border-2 border-slate-200 rounded-2xl text-center text-3xl font-black tracking-widest focus:border-red-500 focus:ring-8 focus:ring-red-100 transition-all uppercase outline-none"
@@ -510,22 +533,23 @@ export const VoteEntry: React.FC<VoteEntryProps> = ({ villages, statuses, onSubm
       {/* Factory Reset Modal */}
       {showFactoryResetConfirm && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-red-950/90 backdrop-blur-2xl p-4 animate-in fade-in duration-200">
-           <div className="bg-red-900 rounded-[56px] p-12 max-w-md w-full shadow-[0_0_100px_rgba(220,38,38,0.3)] border-2 border-red-500/50 text-center relative overflow-hidden">
+           <div className="bg-red-900 rounded-[56px] p-12 max-w-md w-full shadow-[0_0_100px_rgba(220,38,38,0.3)] border-2 border-red-500/50 text-center relative overflow-hidden" role="dialog" aria-modal="true" aria-labelledby="factory-reset-title">
               <div className="absolute top-0 inset-x-0 h-4 bg-white/20"></div>
               <div className="w-32 h-32 bg-white/10 text-white rounded-full flex items-center justify-center mx-auto mb-8 ring-12 ring-white/5 shadow-inner">
                   <DatabaseZap size={64} />
               </div>
-              <h3 className="text-4xl font-black text-white mb-4 tracking-tighter uppercase">ล้างข้อมูลถาวร?</h3>
+              <h3 id="factory-reset-title" className="text-4xl font-black text-white mb-4 tracking-tighter uppercase">ล้างข้อมูลถาวร?</h3>
               <p className="text-red-100 mb-10 font-bold text-xl leading-relaxed">
                   นี่คือการคืนค่าโรงงาน ข้อมูล <strong className="text-white">localStorage</strong> ทั้งหมดรวมถึงประวัติและ Audit Log จะหายไป <br/>
                   <span className="text-white font-black bg-red-800 px-4 py-2 rounded-xl mt-4 inline-block uppercase tracking-[0.2em] text-xs border border-red-700 shadow-lg">Extreme Action Required</span>
               </p>
 
               <div className="mb-10 bg-red-950/50 p-8 rounded-[32px] border-2 border-red-700 shadow-inner">
-                  <label className="block text-[10px] font-black text-red-400 uppercase tracking-[0.3em] mb-4 text-center">
+                  <label htmlFor="factory-reset-input" className="block text-[10px] font-black text-red-400 uppercase tracking-[0.3em] mb-4 text-center">
                       พิมพ์คำว่า <span className="text-white select-all font-mono">DELETE ALL</span>
                   </label>
                   <input 
+                    id="factory-reset-input"
                     type="text"
                     autoFocus
                     className="w-full p-5 border-2 border-red-600 bg-red-900/50 text-white rounded-2xl text-center text-3xl font-black tracking-widest focus:border-white outline-none transition-all uppercase placeholder:text-red-800"

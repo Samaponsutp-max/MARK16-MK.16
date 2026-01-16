@@ -6,9 +6,9 @@ import { VoteEntry } from './components/VoteEntry';
 import { AuditLog } from './components/AuditLog';
 import { Settings } from './components/Settings';
 import { AIAssistant } from './components/AIAssistant';
-import { VILLAGES } from './constants';
+import { VILLAGES, MOCK_INITIAL_VOTES, MOCK_INITIAL_STATUSES } from './constants';
 import { VoteRecord, VillageStatus, AuditLogEntry, NotificationSettings, NotificationCategory, ElectionType } from './types';
-import { Lock, X, Bell, CheckCircle2, AlertCircle, Mail, Sparkles } from 'lucide-react';
+import { Lock, X, Bell, CheckCircle2, AlertCircle, Mail, Sparkles, Download, Upload, CloudCheck } from 'lucide-react';
 
 interface Notification {
   id: string;
@@ -40,8 +40,9 @@ function App() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [settings, setSettings] = useState<NotificationSettings>(DEFAULT_SETTINGS);
   
-  const isInitialMount = useRef(true);
-  const STORAGE_KEY = 'ELECTION_APP_DATA_V3_PROD';
+  // Storage Hydration Flag
+  const [isInitialized, setIsInitialized] = useState(false);
+  const STORAGE_KEY = 'ELECTION_APP_DATA_V4_STABLE';
 
   const currentDate = new Date().toLocaleDateString('th-TH', { 
     year: 'numeric', 
@@ -49,34 +50,76 @@ function App() {
     day: 'numeric' 
   });
 
-  const loadData = useCallback(() => {
-    try {
-      const savedData = localStorage.getItem(STORAGE_KEY);
-      if (savedData) {
-        const parsed = JSON.parse(savedData);
-        setVotes(parsed.votes || []);
-        setStatuses((parsed.statuses || []).map((s: any) => ({ ...s, lastUpdated: s.lastUpdated ? new Date(s.lastUpdated) : undefined })));
-        setAuditLogs((parsed.logs || []).map((l: any) => ({ ...l, timestamp: new Date(l.timestamp) })));
-        setLastUpdated(parsed.lastUpdated ? new Date(parsed.lastUpdated) : new Date());
-        if (parsed.settings) setSettings(parsed.settings);
-      } else {
-        setVotes([]);
-        setStatuses(VILLAGES.map(v => ({ villageId: v.id, isReported: false, isVerified: false })));
+  // 1. Initial Load (Hydration) & Cross-Tab Sync
+  useEffect(() => {
+    const loadData = () => {
+      try {
+        const savedData = localStorage.getItem(STORAGE_KEY);
+        if (savedData) {
+          const parsed = JSON.parse(savedData);
+          if (Array.isArray(parsed.votes)) setVotes(parsed.votes);
+          if (Array.isArray(parsed.statuses)) {
+            setStatuses(parsed.statuses.map((s: any) => ({ 
+              ...s, 
+              lastUpdated: s.lastUpdated ? new Date(s.lastUpdated) : undefined 
+            })));
+          }
+          if (Array.isArray(parsed.logs)) {
+            setAuditLogs(parsed.logs.map((l: any) => ({ 
+              ...l, 
+              timestamp: new Date(l.timestamp) 
+            })));
+          }
+          if (parsed.lastUpdated) setLastUpdated(new Date(parsed.lastUpdated));
+          if (parsed.settings) setSettings(parsed.settings);
+        } else {
+          const initialVotes = MOCK_INITIAL_VOTES();
+          setVotes(initialVotes);
+          setStatuses(MOCK_INITIAL_STATUSES(initialVotes));
+          addNotification('โหลดข้อมูลคะแนนเริ่มต้นสำเร็จ', 'info', 'system');
+        }
+      } catch (e) {
+        console.error("Hydration Failed:", e);
+      } finally {
+        setIsInitialized(true);
       }
-    } catch (e) {
-      console.error("Failed to load data", e);
-    }
+    };
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === STORAGE_KEY && e.newValue) {
+        const parsed = JSON.parse(e.newValue);
+        setVotes(parsed.votes || []);
+        setStatuses((parsed.statuses || []).map((s: any) => ({ 
+          ...s, 
+          lastUpdated: s.lastUpdated ? new Date(s.lastUpdated) : undefined 
+        })));
+        setAuditLogs((parsed.logs || []).map((l: any) => ({ 
+          ...l, 
+          timestamp: new Date(l.timestamp) 
+        })));
+        setLastUpdated(new Date(parsed.lastUpdated || Date.now()));
+        // Silent update for dashboard, but can show a small hint if needed
+      }
+    };
+
+    loadData();
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
+  // 2. Auto-Save Logic
   useEffect(() => {
-    loadData();
-    isInitialMount.current = false;
-  }, [loadData]);
-
-  useEffect(() => {
-    if (isInitialMount.current) return;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ votes, statuses, logs: auditLogs, lastUpdated, settings }));
-  }, [votes, statuses, auditLogs, lastUpdated, settings]);
+    if (!isInitialized) return;
+    
+    const dataToSave = { 
+      votes, 
+      statuses, 
+      logs: auditLogs, 
+      lastUpdated: lastUpdated.toISOString(), 
+      settings 
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+  }, [votes, statuses, auditLogs, lastUpdated, settings, isInitialized]);
 
   const addNotification = useCallback((message: string, type: 'info' | 'success' | 'error' | 'warning' = 'info', category: NotificationCategory = 'general') => {
     if (category === 'close-race' && !settings.alertCloseRace) return;
@@ -89,10 +132,49 @@ function App() {
   }, [settings]);
 
   const handleRefresh = useCallback(() => {
-    loadData();
-    setLastUpdated(new Date());
-    addNotification('อัปเดตข้อมูลล่าสุดเรียบร้อยแล้ว', 'success', 'system');
-  }, [loadData, addNotification]);
+    const savedData = localStorage.getItem(STORAGE_KEY);
+    if (savedData) {
+        const parsed = JSON.parse(savedData);
+        setVotes(parsed.votes || []);
+        setStatuses((parsed.statuses || []).map((s: any) => ({ ...s, lastUpdated: s.lastUpdated ? new Date(s.lastUpdated) : undefined })));
+        setLastUpdated(new Date());
+        addNotification('รีเฟรชและโหลดข้อมูลล่าสุดแล้ว', 'success', 'system');
+    }
+  }, [addNotification]);
+
+  const handleExportData = () => {
+    const data = { votes, statuses, logs: auditLogs, lastUpdated, settings };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `election_backup_${new Date().toISOString().replace(/:/g, '-')}.json`;
+    link.click();
+    addNotification('ส่งออกข้อมูลสำรองเรียบร้อยแล้ว', 'success', 'system');
+  };
+
+  const handleImportData = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        try {
+            const parsed = JSON.parse(event.target?.result as string);
+            if (parsed.votes && parsed.statuses) {
+                setVotes(parsed.votes);
+                setStatuses(parsed.statuses.map((s: any) => ({ ...s, lastUpdated: s.lastUpdated ? new Date(s.lastUpdated) : undefined })));
+                if (parsed.logs) setAuditLogs(parsed.logs.map((l: any) => ({ ...l, timestamp: new Date(l.timestamp) })));
+                setLastUpdated(new Date());
+                addNotification('นำเข้าข้อมูลสำเร็จ', 'success', 'system');
+                setActiveTab('dashboard');
+            }
+        } catch (err) {
+            addNotification('ไฟล์ข้อมูลไม่ถูกต้อง', 'error', 'system');
+        }
+    };
+    reader.readAsText(file);
+  };
 
   const handleAuthSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
@@ -215,23 +297,55 @@ function App() {
         onRefresh={handleRefresh}
       />
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10">
-        <div className="mb-8 border-b border-slate-200 pb-5">
-            <h1 className="text-3xl font-bold text-slate-900">
-              {activeTab === 'dashboard' && 'แดชบอร์ดรายงานผลการเลือกตั้ง'}
-              {activeTab === 'entry' && 'บันทึกคะแนนรายหน่วย'}
-              {activeTab === 'audit' && 'ตรวจสอบประวัติและกู้คืนข้อมูล'}
-              {activeTab === 'settings' && 'การตั้งค่าระบบ'}
-              {activeTab === 'ai' && 'วิเคราะห์อัจฉริยะ (AI Assistant)'}
-            </h1>
-            <p className="text-slate-600 mt-1 font-medium">องค์การบริหารส่วนตำบลเหนือเมือง • {currentDate}</p>
+        <div className="mb-8 border-b border-slate-200 pb-5 flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div>
+                <h1 className="text-3xl font-bold text-slate-900">
+                  {activeTab === 'dashboard' && 'แดชบอร์ดรายงานผลการเลือกตั้ง'}
+                  {activeTab === 'entry' && 'บันทึกคะแนนรายหน่วย'}
+                  {activeTab === 'audit' && 'ตรวจสอบประวัติและกู้คืนข้อมูล'}
+                  {activeTab === 'settings' && 'การตั้งค่าระบบ'}
+                  {activeTab === 'ai' && 'วิเคราะห์อัจฉริยะ (AI Assistant)'}
+                </h1>
+                <p className="text-slate-600 mt-1 font-medium flex items-center gap-2">
+                    องค์การบริหารส่วนตำบลเหนือเมือง • {currentDate}
+                    <span className="flex items-center gap-1 text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full text-[10px] font-black uppercase">
+                        <CheckCircle2 size={12} /> ข้อมูลบันทึกถาวร (Autosave Active)
+                    </span>
+                </p>
+            </div>
+            
+            {userRole === 'officer' && (
+              <div className="flex items-center gap-3">
+                  <button 
+                    onClick={handleExportData}
+                    className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-xl text-sm font-black hover:bg-emerald-100 transition-all"
+                  >
+                    <Download size={16} /> ส่งออกไฟล์สำรอง
+                  </button>
+                  <label className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 border border-blue-100 rounded-xl text-sm font-black hover:bg-blue-100 transition-all cursor-pointer">
+                    <Upload size={16} /> นำเข้าข้อมูล
+                    <input type="file" className="hidden" accept=".json" onChange={handleImportData} />
+                  </label>
+              </div>
+            )}
         </div>
 
         <div>
-          {activeTab === 'dashboard' && <Dashboard votes={votes} villages={VILLAGES} statuses={statuses} lastUpdated={lastUpdated} onRefresh={handleRefresh} />}
-          {activeTab === 'audit' && (userRole === 'officer' ? <AuditLog logs={auditLogs} onRollback={handleRollback} /> : <div className="py-20 text-center"><Lock className="mx-auto w-12 h-12 text-slate-300" /><p className="mt-4 font-bold text-slate-500">สำหรับเจ้าหน้าที่เท่านั้น</p></div>)}
-          {activeTab === 'entry' && (userRole === 'officer' ? <VoteEntry villages={VILLAGES} statuses={statuses} onSubmit={handleVoteSubmit} onReset={handleResetVotes} /> : <div className="py-20 text-center"><button onClick={() => setShowAuthModal(true)} className="px-8 py-3 bg-blue-900 text-white font-bold rounded-lg shadow-md">ยืนยันตัวตน</button></div>)}
-          {activeTab === 'settings' && <Settings settings={settings} onUpdate={setSettings} />}
-          {activeTab === 'ai' && <AIAssistant />}
+          {!isInitialized ? (
+            <div className="py-40 flex flex-col items-center justify-center text-slate-400">
+                <div className="w-12 h-12 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+                <p className="font-black uppercase tracking-widest text-sm text-blue-900">กำลังกู้คืนข้อมูลจากหน่วยความจำ...</p>
+            </div>
+          ) : (
+            <>
+                {activeTab === 'dashboard' && <Dashboard votes={votes} villages={VILLAGES} statuses={statuses} lastUpdated={lastUpdated} onRefresh={handleRefresh} />}
+                {activeTab === 'audit' && (userRole === 'officer' ? <AuditLog logs={auditLogs} onRollback={handleRollback} /> : <div className="py-20 text-center"><Lock className="mx-auto w-12 h-12 text-slate-300" /><p className="mt-4 font-bold text-slate-500">สำหรับเจ้าหน้าที่เท่านั้น</p></div>)}
+                {activeTab === 'entry' && (userRole === 'officer' ? <VoteEntry villages={VILLAGES} statuses={statuses} onSubmit={handleVoteSubmit} onReset={handleResetVotes} /> : <div className="py-20 text-center"><button onClick={() => setShowAuthModal(true)} className="px-8 py-3 bg-blue-900 text-white font-bold rounded-lg shadow-md">ยืนยันตัวตน</button></div>)}
+                {activeTab === 'settings' && <Settings settings={settings} onUpdate={setSettings} onExport={handleExportData} onImport={() => document.getElementById('file-import-hidden')?.click()} />}
+                {activeTab === 'ai' && <AIAssistant />}
+                <input type="file" id="file-import-hidden" className="hidden" accept=".json" onChange={handleImportData} />
+            </>
+          )}
         </div>
       </main>
 

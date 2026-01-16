@@ -1,20 +1,67 @@
 
 import React from 'react';
 import { NotificationSettings } from '../types';
-import { Bell, Mail, Shield, Save, BellOff, MailCheck, AlertTriangle } from 'lucide-react';
+import { Bell, Mail, Shield, Save, BellOff, MailCheck, AlertTriangle, Database, Download, Upload } from 'lucide-react';
 
 interface SettingsProps {
   settings: NotificationSettings;
   onUpdate: (s: NotificationSettings) => void;
+  onExport: () => void;
+  onImport: () => void;
 }
 
-export const Settings: React.FC<SettingsProps> = ({ settings, onUpdate }) => {
+export const Settings: React.FC<SettingsProps> = ({ settings, onUpdate, onExport, onImport }) => {
   const handleChange = (key: keyof NotificationSettings, value: any) => {
     onUpdate({ ...settings, [key]: value });
   };
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-fade-in pb-20 px-4">
+      
+      {/* 1. Data Management Section - CRITICAL FOR REAL USAGE */}
+      <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="bg-emerald-700 p-8 text-white flex items-center gap-6 border-b-8 border-emerald-900">
+           <div className="bg-white/20 p-4 rounded-2xl text-white shadow-lg">
+              <Database size={32} />
+           </div>
+           <div>
+              <h2 className="text-2xl font-black">จัดการข้อมูล (Data Management)</h2>
+              <p className="text-emerald-100 font-medium">สำรองข้อมูลคะแนนจริงเพื่อความปลอดภัยและความต่อเนื่อง</p>
+           </div>
+        </div>
+        <div className="p-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="p-6 bg-slate-50 border border-slate-200 rounded-3xl space-y-4">
+                    <h4 className="font-black text-slate-800 flex items-center gap-2"><Download size={20} className="text-emerald-600" /> สำรองข้อมูล (Export)</h4>
+                    <p className="text-sm text-slate-500 leading-relaxed">ดาวน์โหลดไฟล์ข้อมูลคะแนนทั้งหมดเก็บไว้เป็นไฟล์ .json เพื่อป้องกันข้อมูลสูญหาย หรือเพื่อส่งต่อข้อมูลให้เจ้าหน้าที่คนอื่น</p>
+                    <button 
+                        onClick={onExport}
+                        className="w-full py-4 bg-emerald-600 text-white font-black rounded-2xl shadow-lg hover:bg-emerald-700 transition-all flex items-center justify-center gap-2"
+                    >
+                        ดาวน์โหลดข้อมูลล่าสุด
+                    </button>
+                </div>
+                <div className="p-6 bg-slate-50 border border-slate-200 rounded-3xl space-y-4">
+                    <h4 className="font-black text-slate-800 flex items-center gap-2"><Upload size={20} className="text-blue-600" /> นำเข้าข้อมูล (Import)</h4>
+                    <p className="text-sm text-slate-500 leading-relaxed">เลือกไฟล์ข้อมูล .json ที่ได้ทำการสำรองไว้ เพื่อนำผลคะแนนกลับมาแสดงผลหรือดำเนินการต่อในเครื่องนี้</p>
+                    <button 
+                        onClick={onImport}
+                        className="w-full py-4 bg-white border-2 border-blue-200 text-blue-600 font-black rounded-2xl shadow-md hover:bg-blue-50 transition-all flex items-center justify-center gap-2"
+                    >
+                        เลือกไฟล์เพื่ออัปเดต
+                    </button>
+                </div>
+            </div>
+            <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-4">
+                <AlertTriangle className="text-amber-600 shrink-0" size={24} />
+                <p className="text-xs text-amber-700 font-bold leading-relaxed">
+                    คำแนะนำ: เนื่องจากการเก็บข้อมูลเป็นแบบ Local Storage ในเบราว์เซอร์ หากท่านทำการล้างประวัติการเข้าชม (Clear Cache) ข้อมูลอาจสูญหายได้ แนะนำให้กด "สำรองข้อมูล" ทุกครั้งหลังมีการอัปเดตคะแนนสำคัญครับ
+                </p>
+            </div>
+        </div>
+      </div>
+
+      {/* 2. Notification Settings */}
       <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="bg-[#1e293b] p-8 text-white flex items-center gap-6 border-b-8 border-blue-500">
            <div className="bg-blue-500 p-4 rounded-2xl text-white shadow-lg">
